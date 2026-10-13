@@ -1,0 +1,1162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PowerRoot Dojo - Master Squares & Cubes 1 to 50</title>
+  <!-- Tailwind CSS for sleek responsive styling -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Canvas Confetti for celebrations -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Outfit', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              400: '#818cf8',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+              800: '#3730a3',
+              900: '#312e81',
+              950: '#0f1123',
+            },
+            accent: {
+              cyan: '#06b6d4',
+              emerald: '#10b981',
+              amber: '#f59e0b',
+              rose: '#f43f5e',
+              violet: '#8b5cf6',
+            }
+          },
+          keyframes: {
+            pop: {
+              '0%': { transform: 'scale(0.95)' },
+              '50%': { transform: 'scale(1.05)' },
+              '100%': { transform: 'scale(1)' }
+            },
+            shake: {
+              '0%, 100%': { transform: 'translateX(0)' },
+              '20%, 60%': { transform: 'translateX(-6px)' },
+              '40%, 80%': { transform: 'translateX(6px)' }
+            },
+            glow: {
+              '0%, 100%': { opacity: '0.4' },
+              '50%': { opacity: '0.8' }
+            }
+          },
+          animation: {
+            pop: 'pop 0.25s ease-out',
+            shake: 'shake 0.4s ease-in-out',
+            glow: 'glow 2s infinite ease-in-out',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Custom scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.4);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #4f46e5;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #6366f1;
+    }
+    /* Disable double-tap zoom on buttons for snappy mobile gameplay */
+    button {
+      touch-action: manipulation;
+    }
+  </style>
+</head>
+<body class="bg-brand-950 text-slate-100 min-h-screen flex flex-col font-sans selection:bg-brand-500 selection:text-white relative overflow-x-hidden">
+
+  <!-- Ambient Background Glows -->
+  <div class="fixed inset-0 pointer-events-none overflow-hidden z-0">
+    <div class="absolute -top-40 -left-40 w-96 h-96 bg-brand-600/20 rounded-full blur-3xl animate-glow"></div>
+    <div class="absolute top-1/2 -right-40 w-96 h-96 bg-accent-cyan/15 rounded-full blur-3xl animate-glow" style="animation-delay: 1s;"></div>
+    <div class="absolute -bottom-40 left-1/3 w-96 h-96 bg-accent-violet/15 rounded-full blur-3xl animate-glow" style="animation-delay: 2s;"></div>
+  </div>
+
+  <!-- Header Bar -->
+  <header class="relative z-20 border-b border-indigo-900/60 bg-brand-950/80 backdrop-blur-md sticky top-0 px-4 py-3 sm:px-6">
+    <div class="max-w-6xl mx-auto flex items-center justify-between gap-3">
+      <!-- Logo -->
+      <div class="flex items-center gap-3 cursor-pointer" onclick="switchTab('play')">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-accent-cyan flex items-center justify-center shadow-lg shadow-brand-500/30 font-black text-xl text-white">
+          <span>x²</span>
+        </div>
+        <div>
+          <h1 class="text-lg sm:text-xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-indigo-200 to-accent-cyan">
+            PowerRoot Dojo
+          </h1>
+          <p class="text-xs text-indigo-300 font-medium hidden sm:block">Master 1 to 50 Powers & Roots</p>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <nav class="flex items-center bg-slate-900/80 p-1 rounded-xl border border-indigo-800/50">
+        <button id="nav-play" onclick="switchTab('play')" class="px-3.5 py-1.5 rounded-lg text-sm font-semibold transition-all duration-200 bg-brand-600 text-white shadow-md">
+          🥋 Practice
+        </button>
+        <button id="nav-table" onclick="switchTab('table')" class="px-3.5 py-1.5 rounded-lg text-sm font-medium text-slate-300 hover:text-white transition-all duration-200">
+          📜 Cheat Sheet
+        </button>
+        <button id="nav-mistakes" onclick="switchTab('mistakes')" class="px-3.5 py-1.5 rounded-lg text-sm font-medium text-slate-300 hover:text-white transition-all duration-200 relative">
+          🎯 Review <span id="mistake-badge" class="hidden ml-1 px-1.5 py-0.2 text-[10px] bg-accent-rose text-white rounded-full">0</span>
+        </button>
+      </nav>
+
+      <!-- Sound & Settings Quick Action -->
+      <div class="flex items-center gap-2">
+        <button id="sound-toggle-btn" onclick="toggleSound()" title="Toggle Sound (M)" class="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 border border-slate-700/80 text-slate-300 transition-colors">
+          <svg id="sound-icon-on" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path></svg>
+          <svg id="sound-icon-off" class="w-5 h-5 hidden text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15zM17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"></path></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="relative z-10 flex-1 max-w-5xl w-full mx-auto p-4 sm:p-6 flex flex-col gap-6">
+
+    <!-- TAB 1: GAME PLAY TAB -->
+    <div id="tab-play" class="flex flex-col gap-5">
+      
+      <!-- Top Control Bar: Mode selection, Ranges, Input style -->
+      <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xl backdrop-blur-md flex flex-col gap-4">
+        <!-- Modes & Badges -->
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center gap-2">
+            <span class="text-xs uppercase font-extrabold tracking-wider text-indigo-400">Mode:</span>
+            <div class="inline-flex flex-wrap gap-1 bg-slate-950/70 p-1 rounded-xl border border-slate-800">
+              <button onclick="setGameMode('mixed')" id="mode-mixed" class="px-3 py-1 text-xs font-semibold rounded-lg bg-brand-600 text-white transition-all">Mixed Blitz</button>
+              <button onclick="setGameMode('power')" id="mode-power" class="px-3 py-1 text-xs font-semibold rounded-lg text-slate-300 hover:text-white transition-all">Direct Power (x², x³)</button>
+              <button onclick="setGameMode('root')" id="mode-root" class="px-3 py-1 text-xs font-semibold rounded-lg text-slate-300 hover:text-white transition-all">Roots (√x, ∛x)</button>
+              <button onclick="setGameMode('identify')" id="mode-identify" class="px-3 py-1 text-xs font-semibold rounded-lg text-slate-300 hover:text-white transition-all">Identification</button>
+            </div>
+          </div>
+
+          <!-- Input Format Toggle -->
+          <div class="flex items-center gap-2">
+            <span class="text-xs uppercase font-extrabold tracking-wider text-indigo-400">Answer Via:</span>
+            <div class="inline-flex bg-slate-950/70 p-1 rounded-xl border border-slate-800">
+              <button onclick="setInputMode('mcq')" id="input-mcq" class="px-3 py-1 text-xs font-semibold rounded-lg bg-indigo-600 text-white transition-all">4 Choices</button>
+              <button onclick="setInputMode('type')" id="input-type" class="px-3 py-1 text-xs font-semibold rounded-lg text-slate-300 hover:text-white transition-all">Type-In</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Range Filter & Topics -->
+        <div class="pt-3 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-4 text-xs">
+          <!-- Range presets -->
+          <div class="flex items-center gap-2 flex-wrap">
+            <span class="text-slate-400 font-semibold">Range:</span>
+            <div class="inline-flex gap-1.5">
+              <button onclick="setRange(1, 10)" id="range-10" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium">1 - 10 (Beginner)</button>
+              <button onclick="setRange(1, 25)" id="range-25" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium">1 - 25 (Standard)</button>
+              <button onclick="setRange(1, 50)" id="range-50" class="px-2.5 py-1 rounded-lg bg-brand-600 text-white font-medium">1 - 50 (Master)</button>
+            </div>
+          </div>
+
+          <!-- Active topics toggles for mixed mode -->
+          <div id="topic-checkboxes" class="flex items-center gap-3 flex-wrap">
+            <label class="flex items-center gap-1.5 cursor-pointer text-slate-300 hover:text-white select-none">
+              <input type="checkbox" id="topic-sq" checked onchange="updateTopics()" class="rounded bg-slate-800 border-slate-700 text-brand-500 focus:ring-0">
+              <span>x²</span>
+            </label>
+            <label class="flex items-center gap-1.5 cursor-pointer text-slate-300 hover:text-white select-none">
+              <input type="checkbox" id="topic-cb" checked onchange="updateTopics()" class="rounded bg-slate-800 border-slate-700 text-brand-500 focus:ring-0">
+              <span>x³</span>
+            </label>
+            <label class="flex items-center gap-1.5 cursor-pointer text-slate-300 hover:text-white select-none">
+              <input type="checkbox" id="topic-sqrt" checked onchange="updateTopics()" class="rounded bg-slate-800 border-slate-700 text-brand-500 focus:ring-0">
+              <span>√x</span>
+            </label>
+            <label class="flex items-center gap-1.5 cursor-pointer text-slate-300 hover:text-white select-none">
+              <input type="checkbox" id="topic-cbrt" checked onchange="updateTopics()" class="rounded bg-slate-800 border-slate-700 text-brand-500 focus:ring-0">
+              <span>∛x</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Score & Streak Bar -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <!-- Score -->
+        <div class="bg-slate-900/80 border border-slate-800/80 p-3.5 rounded-2xl flex items-center justify-between">
+          <div>
+            <div class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Score</div>
+            <div id="stat-score" class="text-2xl font-black text-white font-mono">0</div>
+          </div>
+          <div class="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-lg">
+            ⭐
+          </div>
+        </div>
+
+        <!-- Streak & Combo -->
+        <div class="bg-slate-900/80 border border-slate-800/80 p-3.5 rounded-2xl flex items-center justify-between">
+          <div>
+            <div class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Current Streak</div>
+            <div class="flex items-baseline gap-1.5">
+              <span id="stat-streak" class="text-2xl font-black text-accent-emerald font-mono">0</span>
+              <span id="stat-multiplier" class="text-xs font-bold text-accent-cyan font-mono hidden">1.0x</span>
+            </div>
+          </div>
+          <div class="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-lg">
+            🔥
+          </div>
+        </div>
+
+        <!-- Accuracy -->
+        <div class="bg-slate-900/80 border border-slate-800/80 p-3.5 rounded-2xl flex items-center justify-between">
+          <div>
+            <div class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Accuracy</div>
+            <div id="stat-accuracy" class="text-2xl font-black text-indigo-300 font-mono">100%</div>
+          </div>
+          <div class="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold text-lg">
+            🎯
+          </div>
+        </div>
+
+        <!-- Speed Timer (Blitz) / Total Solved -->
+        <div class="bg-slate-900/80 border border-slate-800/80 p-3.5 rounded-2xl flex items-center justify-between">
+          <div>
+            <div id="stat-speed-label" class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Blitz Timer</div>
+            <div id="stat-timer" class="text-2xl font-black text-accent-rose font-mono">60s</div>
+          </div>
+          <div class="w-10 h-10 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center justify-center font-bold text-lg">
+            ⏱️
+          </div>
+        </div>
+      </div>
+
+      <!-- Interactive Question Card -->
+      <div id="question-card" class="bg-gradient-to-b from-slate-900 via-brand-950 to-slate-900 border border-indigo-900/70 rounded-3xl p-6 sm:p-10 shadow-2xl relative overflow-hidden flex flex-col items-center justify-center min-h-[340px]">
+        <!-- Question Badge / Category -->
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-950/80 border border-indigo-800/60 text-xs font-semibold text-indigo-300 mb-4 shadow-sm">
+          <span id="q-category-icon">⚡</span>
+          <span id="q-category-text">Direct Power</span>
+        </div>
+
+        <!-- The Prominent Question Math Notation -->
+        <div class="text-center my-3 max-w-xl">
+          <p id="q-instruction" class="text-sm sm:text-base text-slate-400 font-medium mb-2">What is the square of:</p>
+          <div id="q-main-display" class="text-4xl sm:text-6xl font-black tracking-tight text-white font-mono drop-shadow-[0_10px_20px_rgba(99,102,241,0.3)]">
+            17²
+          </div>
+        </div>
+
+        <!-- Instant Feedback Banner -->
+        <div id="feedback-banner" class="min-h-[28px] my-2 text-center text-sm font-semibold transition-all duration-200">
+          <!-- Dynamically populated -->
+        </div>
+
+        <!-- Multiple Choice Options Grid -->
+        <div id="mcq-container" class="w-full max-w-xl grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+          <!-- 4 Choice buttons with keyboard shortcuts -->
+          <button onclick="handleOptionSelect(0)" id="opt-btn-0" class="group relative px-5 py-4 rounded-2xl bg-slate-800/90 hover:bg-indigo-900/60 active:scale-98 border border-slate-700/80 hover:border-indigo-500 text-left transition-all duration-150 flex items-center justify-between">
+            <span class="text-lg sm:text-xl font-bold font-mono text-white opt-value">-</span>
+            <span class="w-6 h-6 rounded-md bg-slate-900/80 border border-slate-700 text-xs font-mono text-slate-400 group-hover:text-indigo-300 flex items-center justify-center">1</span>
+          </button>
+          <button onclick="handleOptionSelect(1)" id="opt-btn-1" class="group relative px-5 py-4 rounded-2xl bg-slate-800/90 hover:bg-indigo-900/60 active:scale-98 border border-slate-700/80 hover:border-indigo-500 text-left transition-all duration-150 flex items-center justify-between">
+            <span class="text-lg sm:text-xl font-bold font-mono text-white opt-value">-</span>
+            <span class="w-6 h-6 rounded-md bg-slate-900/80 border border-slate-700 text-xs font-mono text-slate-400 group-hover:text-indigo-300 flex items-center justify-center">2</span>
+          </button>
+          <button onclick="handleOptionSelect(2)" id="opt-btn-2" class="group relative px-5 py-4 rounded-2xl bg-slate-800/90 hover:bg-indigo-900/60 active:scale-98 border border-slate-700/80 hover:border-indigo-500 text-left transition-all duration-150 flex items-center justify-between">
+            <span class="text-lg sm:text-xl font-bold font-mono text-white opt-value">-</span>
+            <span class="w-6 h-6 rounded-md bg-slate-900/80 border border-slate-700 text-xs font-mono text-slate-400 group-hover:text-indigo-300 flex items-center justify-center">3</span>
+          </button>
+          <button onclick="handleOptionSelect(3)" id="opt-btn-3" class="group relative px-5 py-4 rounded-2xl bg-slate-800/90 hover:bg-indigo-900/60 active:scale-98 border border-slate-700/80 hover:border-indigo-500 text-left transition-all duration-150 flex items-center justify-between">
+            <span class="text-lg sm:text-xl font-bold font-mono text-white opt-value">-</span>
+            <span class="w-6 h-6 rounded-md bg-slate-900/80 border border-slate-700 text-xs font-mono text-slate-400 group-hover:text-indigo-300 flex items-center justify-center">4</span>
+          </button>
+        </div>
+
+        <!-- Direct Type-In Container (Alternative to MCQ) -->
+        <div id="type-container" class="w-full max-w-sm hidden flex-col items-center gap-3 mt-2">
+          <div class="relative w-full">
+            <input type="number" id="type-input" placeholder="Type your answer..." 
+                   class="w-full px-5 py-4 bg-slate-950/90 border-2 border-indigo-600/80 rounded-2xl text-2xl font-mono text-center font-bold text-white focus:outline-none focus:border-accent-cyan shadow-inner" 
+                   onkeydown="if(event.key==='Enter') submitTypedAnswer()">
+          </div>
+
+          <div class="flex gap-2 w-full">
+            <button onclick="submitTypedAnswer()" class="flex-1 py-3 px-4 bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 text-white font-bold rounded-xl transition shadow-lg shadow-indigo-600/30">
+              Submit (↵)
+            </button>
+            <button onclick="showHint()" class="py-3 px-4 bg-slate-800 hover:bg-slate-700 text-indigo-300 font-semibold rounded-xl border border-slate-700 transition">
+              💡 Hint
+            </button>
+          </div>
+
+          <!-- Virtual Numpad for mobile convenience -->
+          <div class="grid grid-cols-3 gap-2 w-full mt-2">
+            <button onclick="appendNum('1')" class="py-2.5 bg-slate-800/70 hover:bg-slate-700 rounded-xl font-mono text-lg font-bold">1</button>
+            <button onclick="appendNum('2')" class="py-2.5 bg-slate-800/70 hover:bg-slate-700 rounded-xl font-mono text-lg font-bold">2</button>
+            <button onclick="appendNum('3')" class="py-2.5 bg-slate-800/70 hover:bg-slate-700 rounded-xl font-mono text-lg font-bold">3</button>
+            <button onclick="appendNum('4')" class="py-2.5 bg-slate-800/70 hover:bg-slate-700 rounded-xl font-mono text-lg font-bold">4</button>
+            <button onclick="appendNum('5')" class="py-2.5 bg-slate-800/70 hover:bg-slate-700 rounded-xl font-mono text-lg font-bold">5</button>
+            <button onclick="appendNum('6')" class="py-2.5 bg-slate-800/70 hover:bg-slate-700 rounded-xl font-mono text-lg font-bold">6</button>
+            <button onclick="appendNum('7')" class="py-2.5 bg-slate-800/70 hover:bg-slate-700 rounded-xl font-mono text-lg font-bold">7</button>
+            <button onclick="appendNum('8')" class="py-2.5 bg-slate-800/70 hover:bg-slate-700 rounded-xl font-mono text-lg font-bold">8</button>
+            <button onclick="appendNum('9')" class="py-2.5 bg-slate-800/70 hover:bg-slate-700 rounded-xl font-mono text-lg font-bold">9</button>
+            <button onclick="clearNum()" class="py-2.5 bg-slate-800/70 hover:bg-rose-900/40 text-rose-300 rounded-xl font-mono text-sm font-bold">CLR</button>
+            <button onclick="appendNum('0')" class="py-2.5 bg-slate-800/70 hover:bg-slate-700 rounded-xl font-mono text-lg font-bold">0</button>
+            <button onclick="deleteNum()" class="py-2.5 bg-slate-800/70 hover:bg-slate-700 rounded-xl font-mono text-lg font-bold">⌫</button>
+          </div>
+        </div>
+
+        <!-- Hint Section Modal/Accordion -->
+        <div id="hint-box" class="w-full max-w-xl mt-4 p-3.5 rounded-2xl bg-indigo-950/50 border border-indigo-800/40 hidden text-xs text-indigo-200">
+          <div class="flex items-center gap-2 font-bold text-accent-amber mb-1">
+            <span>💡 Mathematical Strategy / Trick:</span>
+          </div>
+          <p id="hint-text">Loading trick...</p>
+        </div>
+
+        <!-- Quick Skip / Hint Controls when in MCQ -->
+        <div id="mcq-aux-controls" class="flex items-center justify-between w-full max-w-xl mt-4 pt-4 border-t border-slate-800/60 text-xs">
+          <button onclick="showHint()" class="text-indigo-400 hover:text-indigo-200 flex items-center gap-1 font-medium transition">
+            💡 Need a hint or trick?
+          </button>
+          <button onclick="skipQuestion()" class="text-slate-400 hover:text-slate-200 transition font-medium">
+            Next / Skip ➔
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick Tips Card -->
+      <div class="bg-slate-900/50 border border-slate-800/80 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-400">
+        <div class="flex items-center gap-2">
+          <span class="text-base">⚡</span>
+          <span><strong>Keyboard Pro-Tip:</strong> Press numbers <kbd class="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-200">1</kbd>, <kbd class="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-200">2</kbd>, <kbd class="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-200">3</kbd>, <kbd class="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-200">4</kbd> to pick answers, <kbd class="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-200">H</kbd> for hint, <kbd class="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-200">Space</kbd> to skip.</span>
+        </div>
+        <button onclick="resetStats()" class="hover:text-rose-400 text-slate-500 transition underline whitespace-nowrap">
+          Reset session stats
+        </button>
+      </div>
+    </div>
+
+    <!-- TAB 2: REFERENCE CHEAT SHEET -->
+    <div id="tab-table" class="hidden flex-col gap-4">
+      <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div>
+          <h2 class="text-xl font-bold text-white flex items-center gap-2">
+            <span>📜</span> 1 to 50 Powers & Roots Master Table
+          </h2>
+          <p class="text-xs text-slate-400 mt-1">Study squares, cubes, and their precise roots. Click any row to practice it directly!</p>
+        </div>
+        <!-- Table Search Bar -->
+        <div class="w-full sm:w-64">
+          <input type="text" id="table-search" placeholder="Search number (e.g. 25, 625)..." oninput="filterTable()" 
+                 class="w-full px-3.5 py-2 bg-slate-950 border border-slate-700 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-brand-500">
+        </div>
+      </div>
+
+      <!-- Interactive Table Container -->
+      <div class="bg-slate-900/80 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+        <div class="overflow-x-auto max-h-[600px] overflow-y-auto">
+          <table class="w-full text-left text-sm border-collapse">
+            <thead class="bg-slate-950/90 sticky top-0 z-10 text-xs font-bold uppercase tracking-wider text-indigo-300 border-b border-indigo-900/50">
+              <tr>
+                <th class="p-3.5 text-center">Base (n)</th>
+                <th class="p-3.5 text-center bg-brand-950/40">Square (n²)</th>
+                <th class="p-3.5 text-center">Cube (n³)</th>
+                <th class="p-3.5 text-center bg-brand-950/40">Square Root (√n)</th>
+                <th class="p-3.5 text-center">Cube Root (∛n)</th>
+                <th class="p-3.5 text-center">Action</th>
+              </tr>
+            </thead>
+            <tbody id="cheat-table-body" class="divide-y divide-slate-800 font-mono text-slate-200">
+              <!-- Dynamically populated rows 1 to 50 -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: MISTAKES & REVIEW TAB -->
+    <div id="tab-mistakes" class="hidden flex-col gap-4">
+      <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div>
+          <h2 class="text-xl font-bold text-white flex items-center gap-2">
+            <span>🎯</span> Targeted Mistakes Review
+          </h2>
+          <p class="text-xs text-slate-400 mt-1">Review questions you previously struggled with to lock them into long-term memory.</p>
+        </div>
+        <button onclick="clearMistakesLog()" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-rose-900/30 text-rose-300 border border-slate-700 text-xs font-semibold transition">
+          Clear History
+        </button>
+      </div>
+
+      <!-- Mistakes List View -->
+      <div id="mistakes-container" class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5">
+        <!-- Rendered if empty or filled -->
+        <div id="mistakes-empty" class="text-center py-12 text-slate-400">
+          <div class="text-4xl mb-2">🎉</div>
+          <div class="text-base font-bold text-slate-200">Zero Mistakes on Record!</div>
+          <p class="text-xs text-slate-400 mt-1">Keep practicing in the dojo. Any questions you answer incorrectly will appear here.</p>
+        </div>
+        <div id="mistakes-list" class="grid grid-cols-1 md:grid-cols-2 gap-3 hidden">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <footer class="relative z-10 border-t border-slate-900 py-4 text-center text-xs text-slate-500">
+    <div class="max-w-5xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+      <span>PowerRoot Dojo • Master numbers 1 to 50 effortlessly</span>
+      <span class="text-slate-400 font-mono">1²=1 ... 50²=2500 | 1³=1 ... 50³=125,000</span>
+    </div>
+  </footer>
+
+  <!-- Toast Notification Message Box -->
+  <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none bg-slate-900 border border-indigo-500/50 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3">
+    <span id="toast-icon">✨</span>
+    <span id="toast-msg" class="text-xs font-semibold">Action completed</span>
+  </div>
+
+  <script>
+    // Audio Context Synthesizer (No external MP3s needed)
+    let audioCtx = null;
+    let isSoundMuted = false;
+
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+    }
+
+    function playTone(freq, type, duration, delay = 0, gainLevel = 0.15) {
+      if (isSoundMuted) return;
+      try {
+        initAudio();
+        const startTime = audioCtx.currentTime + delay;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, startTime);
+
+        gain.gain.setValueAtTime(gainLevel, startTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        osc.start(startTime);
+        osc.stop(startTime + duration);
+      } catch (e) {
+        // Fallback gracefully if blocked by autoplay policies
+      }
+    }
+
+    function soundSuccess() {
+      playTone(523.25, 'triangle', 0.1, 0, 0.2); // C5
+      playTone(659.25, 'triangle', 0.15, 0.08, 0.2); // E5
+      playTone(783.99, 'triangle', 0.25, 0.16, 0.2); // G5
+    }
+
+    function soundError() {
+      playTone(220, 'sawtooth', 0.15, 0, 0.2);
+      playTone(185, 'sawtooth', 0.25, 0.12, 0.2);
+    }
+
+    function soundMilestone() {
+      playTone(523.25, 'sine', 0.1, 0, 0.25);
+      playTone(659.25, 'sine', 0.1, 0.08, 0.25);
+      playTone(783.99, 'sine', 0.1, 0.16, 0.25);
+      playTone(1046.50, 'sine', 0.35, 0.24, 0.3); // High C
+    }
+
+    function soundClick() {
+      playTone(400, 'sine', 0.04, 0, 0.05);
+    }
+
+    function toggleSound() {
+      isSoundMuted = !isSoundMuted;
+      document.getElementById('sound-icon-on').classList.toggle('hidden', isSoundMuted);
+      document.getElementById('sound-icon-off').classList.toggle('hidden', !isSoundMuted);
+      showToast(isSoundMuted ? '🔇 Sound Muted' : '🔊 Sound Enabled');
+    }
+
+    // Precomputed Mathematical Database for 1 to 50
+    const MATH_DB = [];
+    const SQUARE_MAP = new Map(); // Square -> base n
+    const CUBE_MAP = new Map();   // Cube -> base n
+
+    for (let i = 1; i <= 50; i++) {
+      const sq = i * i;
+      const cb = i * i * i;
+      const sqrtVal = Math.sqrt(i).toFixed(4);
+      const cbrtVal = Math.cbrt(i).toFixed(4);
+
+      MATH_DB.push({
+        n: i,
+        square: sq,
+        cube: cb,
+        sqrt: sqrtVal,
+        cbrt: cbrtVal
+      });
+
+      SQUARE_MAP.set(sq, i);
+      CUBE_MAP.set(cb, i);
+    }
+
+    // Application state
+    const state = {
+      gameMode: 'mixed', // 'mixed' | 'power' | 'root' | 'identify'
+      inputMode: 'mcq',  // 'mcq' | 'type'
+      minRange: 1,
+      maxRange: 50,
+      activeTopics: {
+        sq: true,
+        cb: true,
+        sqrt: true,
+        cbrt: true
+      },
+      score: 0,
+      streak: 0,
+      bestStreak: 0,
+      correctCount: 0,
+      totalCount: 0,
+      currentQuestion: null,
+      questionStartTime: 0,
+      mistakes: [], // list of missed items
+      timerSec: 60,
+      timerRunning: false,
+      timerInterval: null
+    };
+
+    /**
+     * Helper to generate tricky distractors for squares/cubes
+     */
+    function getPlausibleDistractors(correctVal, baseN, type) {
+      const set = new Set();
+      set.add(correctVal);
+
+      // Adjacent offsets (+1, -1, +2, -2 to base)
+      if (type === 'sq') {
+        if (baseN > 1) set.add((baseN - 1) * (baseN - 1));
+        if (baseN < 50) set.add((baseN + 1) * (baseN + 1));
+        if (baseN > 2) set.add((baseN - 2) * (baseN - 2));
+        if (baseN < 49) set.add((baseN + 2) * (baseN + 2));
+      } else if (type === 'cb') {
+        if (baseN > 1) set.add((baseN - 1) * (baseN - 1) * (baseN - 1));
+        if (baseN < 50) set.add((baseN + 1) * (baseN + 1) * (baseN + 1));
+      } else if (type === 'root_sq' || type === 'root_cb') {
+        // Base answer distractors
+        if (baseN > 1) set.add(baseN - 1);
+        if (baseN < 50) set.add(baseN + 1);
+        if (baseN > 2) set.add(baseN - 2);
+        if (baseN < 49) set.add(baseN + 2);
+      }
+
+      // Add common numeric confusion values (+10, -10, flipped units)
+      const variations = [correctVal + 10, correctVal - 10, correctVal + 2, correctVal - 2, correctVal + 100];
+      for (let v of variations) {
+        if (v > 0 && set.size < 8) set.add(v);
+      }
+
+      // Fill random plausible numbers if needed
+      while (set.size < 6) {
+        const randOffset = Math.floor(Math.random() * 20) - 10;
+        const val = correctVal + randOffset;
+        if (val > 0) set.add(val);
+      }
+
+      const options = Array.from(set).filter(v => v !== correctVal);
+      // Shuffle and pick 3 distractors
+      options.sort(() => Math.random() - 0.5);
+      const chosen = [correctVal, options[0], options[1], options[2]];
+      return chosen.sort(() => Math.random() - 0.5);
+    }
+
+    /**
+     * Generates a new dynamic question based on current modes and filters
+     */
+    function generateQuestion() {
+      const min = state.minRange;
+      const max = state.maxRange;
+      const n = Math.floor(Math.random() * (max - min + 1)) + min;
+
+      // Determine category based on gameMode
+      let category = state.gameMode;
+      if (category === 'mixed') {
+        const enabledTypes = [];
+        if (state.activeTopics.sq) enabledTypes.push('sq');
+        if (state.activeTopics.cb) enabledTypes.push('cb');
+        if (state.activeTopics.sqrt) enabledTypes.push('sqrt');
+        if (state.activeTopics.cbrt) enabledTypes.push('cbrt');
+        enabledTypes.push('identify'); // Identification is also in mix
+
+        category = enabledTypes.length > 0 
+          ? enabledTypes[Math.floor(Math.random() * enabledTypes.length)] 
+          : 'sq';
+      }
+
+      let q = {
+        n: n,
+        type: category,
+        instruction: '',
+        mainDisplay: '',
+        answer: 0,
+        options: [],
+        hint: '',
+        explanation: ''
+      };
+
+      if (category === 'power') {
+        // Direct power: either sq or cb
+        const isCube = Math.random() > 0.5;
+        category = isCube ? 'cb' : 'sq';
+      }
+
+      if (category === 'root') {
+        // Direct root: either sqrt or cbrt
+        const isCubeRoot = Math.random() > 0.5;
+        category = isCubeRoot ? 'cbrt' : 'sqrt';
+      }
+
+      // 1. SQUARE QUESTION
+      if (category === 'sq') {
+        const sq = n * n;
+        q.instruction = `What is the square of ${n}?`;
+        q.mainDisplay = `${n}²`;
+        q.answer = sq;
+        q.options = getPlausibleDistractors(sq, n, 'sq');
+        const unitDigit = n % 10;
+        const sqUnit = (unitDigit * unitDigit) % 10;
+        q.hint = `Unit Digit Trick: Numbers ending in ${unitDigit} always produce a square ending in ${sqUnit} (${unitDigit}² = ${unitDigit*unitDigit}).`;
+        q.explanation = `${n}² = ${n} × ${n} = ${sq}.`;
+      } 
+      // 2. CUBE QUESTION
+      else if (category === 'cb') {
+        const cb = n * n * n;
+        q.instruction = `What is the cube of ${n}?`;
+        q.mainDisplay = `${n}³`;
+        q.answer = cb;
+        q.options = getPlausibleDistractors(cb, n, 'cb');
+        const unitDigit = n % 10;
+        const cbUnit = (unitDigit * unitDigit * unitDigit) % 10;
+        q.hint = `Cube Trick: For base ${n}, unit digit ${unitDigit}³ ends in ${cbUnit}. Also note ${n}³ = ${n * n} × ${n}.`;
+        q.explanation = `${n}³ = ${n} × ${n} × ${n} = ${cb}.`;
+      } 
+      // 3. SQUARE ROOT QUESTION
+      else if (category === 'sqrt') {
+        const sq = n * n;
+        q.instruction = `What is the square root of ${sq}?`;
+        q.mainDisplay = `√${sq}`;
+        q.answer = n;
+        q.options = getPlausibleDistractors(n, n, 'root_sq');
+        q.hint = `Think in reverse: Which number multiplied by itself gives ${sq}? (Check unit digit: ends in ${sq % 10}).`;
+        q.explanation = `√${sq} = ${n} because ${n}² = ${sq}.`;
+      } 
+      // 4. CUBE ROOT QUESTION
+      else if (category === 'cbrt') {
+        const cb = n * n * n;
+        q.instruction = `What is the cube root of ${cb}?`;
+        q.mainDisplay = `∛${cb}`;
+        q.answer = n;
+        q.options = getPlausibleDistractors(n, n, 'root_cb');
+        q.hint = `Cube Root Trick: The unique unit digit helps narrow the base: which integer multiplied three times yields ${cb}?`;
+        q.explanation = `∛${cb} = ${n} because ${n}³ = ${cb}.`;
+      } 
+      // 5. IDENTIFICATION CHALLENGE
+      else if (category === 'identify') {
+        // 4 possible states: "Square", "Cube", "Both (e.g. 1, 64)", "Neither"
+        const roll = Math.random();
+        let targetNum = 0;
+        let correctLabel = '';
+        let explain = '';
+
+        if (roll < 0.25) {
+          // Both (1 is 1² and 1³, 64 is 8² and 4³, 729 is 27² and 9³)
+          const bothOptions = [1, 64];
+          targetNum = bothOptions[Math.floor(Math.random() * bothOptions.length)];
+          correctLabel = "Both Square & Cube";
+          explain = `${targetNum} is both! It is a square (e.g., √${targetNum} = ${Math.sqrt(targetNum)}) and a cube (∛${targetNum} = ${Math.round(Math.cbrt(targetNum))}).`;
+        } else if (roll < 0.50) {
+          // Perfect Square
+          const sqBase = Math.floor(Math.random() * (max - 2)) + 2;
+          targetNum = sqBase * sqBase;
+          // Ensure it's not also a cube
+          if (targetNum === 64 || targetNum === 1) targetNum = 144;
+          correctLabel = "Perfect Square Only";
+          explain = `${targetNum} is ${Math.sqrt(targetNum)}², but not a perfect cube of an integer.`;
+        } else if (roll < 0.75) {
+          // Perfect Cube
+          const cbBase = Math.floor(Math.random() * 20) + 2;
+          targetNum = cbBase * cbBase * cbBase;
+          if (targetNum === 64 || targetNum === 1) targetNum = 125;
+          correctLabel = "Perfect Cube Only";
+          explain = `${targetNum} is ${Math.round(Math.cbrt(targetNum))}³, but not a perfect square of an integer.`;
+        } else {
+          // Neither (Plausible distractor close to a square or cube)
+          const base = Math.floor(Math.random() * (max - 2)) + 2;
+          targetNum = (base * base) + (Math.random() > 0.5 ? 2 : -2);
+          if (SQUARE_MAP.has(targetNum) || CUBE_MAP.has(targetNum)) targetNum += 3;
+          correctLabel = "Neither";
+          explain = `${targetNum} is not a perfect power of any integer from 1 to 50.`;
+        }
+
+        q.instruction = `Identify this number from range 1-50:`;
+        q.mainDisplay = `${targetNum}`;
+        q.answer = correctLabel;
+        q.options = ["Perfect Square Only", "Perfect Cube Only", "Both Square & Cube", "Neither"];
+        q.hint = `Examine factor properties or check if adjacent numbers are known landmarks like ${targetNum-1} or ${targetNum+1}.`;
+        q.explanation = explain;
+      }
+
+      state.currentQuestion = q;
+      state.questionStartTime = Date.now();
+      renderQuestion();
+    }
+
+    function renderQuestion() {
+      const q = state.currentQuestion;
+      if (!q) return;
+
+      // Update instructions & main display
+      document.getElementById('q-instruction').textContent = q.instruction;
+      document.getElementById('q-main-display').textContent = q.mainDisplay;
+
+      // Badge Category & Icon
+      const iconMap = {
+        sq: '²',
+        cb: '³',
+        sqrt: '√',
+        cbrt: '∛',
+        identify: '🔎'
+      };
+      document.getElementById('q-category-icon').textContent = iconMap[q.type] || '⚡';
+      document.getElementById('q-category-text').textContent = 
+        q.type === 'sq' ? 'Square (x²)' :
+        q.type === 'cb' ? 'Cube (x³)' :
+        q.type === 'sqrt' ? 'Square Root (√x)' :
+        q.type === 'cbrt' ? 'Cube Root (∛x)' :
+        q.type === 'identify' ? 'Classification' : 'Mixed Blitz';
+
+      // Clear feedback and hints
+      const fb = document.getElementById('feedback-banner');
+      fb.textContent = '';
+      fb.className = 'min-h-[28px] my-2 text-center text-sm font-semibold transition-all duration-200';
+      document.getElementById('hint-box').classList.add('hidden');
+
+      // Setup MCQ or Type-In container
+      if (state.inputMode === 'mcq') {
+        document.getElementById('mcq-container').classList.remove('hidden');
+        document.getElementById('type-container').classList.add('hidden');
+        document.getElementById('mcq-aux-controls').classList.remove('hidden');
+
+        // Assign option button values
+        for (let i = 0; i < 4; i++) {
+          const btn = document.getElementById(`opt-btn-${i}`);
+          const span = btn.querySelector('.opt-value');
+          span.textContent = q.options[i];
+          btn.disabled = false;
+          // Reset styles
+          btn.className = "group relative px-5 py-4 rounded-2xl bg-slate-800/90 hover:bg-indigo-900/60 active:scale-98 border border-slate-700/80 hover:border-indigo-500 text-left transition-all duration-150 flex items-center justify-between";
+        }
+      } else {
+        document.getElementById('mcq-container').classList.add('hidden');
+        document.getElementById('type-container').classList.remove('hidden');
+        document.getElementById('mcq-aux-controls').classList.add('hidden');
+        const input = document.getElementById('type-input');
+        input.value = '';
+        input.disabled = false;
+        setTimeout(() => input.focus(), 50);
+      }
+    }
+
+    function handleOptionSelect(index) {
+      if (!state.currentQuestion) return;
+      const chosenValue = state.currentQuestion.options[index];
+      validateAnswer(chosenValue, index);
+    }
+
+    function submitTypedAnswer() {
+      const input = document.getElementById('type-input');
+      const val = input.value.trim();
+      if (!val) return;
+      validateAnswer(Number(val), null);
+    }
+
+    function validateAnswer(userVal, btnIndex) {
+      const q = state.currentQuestion;
+      const isCorrect = (String(userVal).toLowerCase() === String(q.answer).toLowerCase());
+      const fb = document.getElementById('feedback-banner');
+
+      // Lock buttons
+      if (state.inputMode === 'mcq') {
+        for (let i = 0; i < 4; i++) {
+          const btn = document.getElementById(`opt-btn-${i}`);
+          btn.disabled = true;
+          // Highlight correct answer in emerald
+          if (String(q.options[i]).toLowerCase() === String(q.answer).toLowerCase()) {
+            btn.className = "relative px-5 py-4 rounded-2xl bg-emerald-950/80 border-2 border-emerald-500 text-left flex items-center justify-between text-emerald-200 animate-pop";
+          }
+        }
+        if (!isCorrect && btnIndex !== null) {
+          const wrongBtn = document.getElementById(`opt-btn-${btnIndex}`);
+          wrongBtn.className = "relative px-5 py-4 rounded-2xl bg-rose-950/80 border-2 border-rose-500 text-left flex items-center justify-between text-rose-200 animate-shake";
+        }
+      }
+
+      state.totalCount++;
+
+      if (isCorrect) {
+        state.correctCount++;
+        state.streak++;
+        if (state.streak > state.bestStreak) state.bestStreak = state.streak;
+
+        // Combo multiplier logic
+        let multiplier = 1;
+        if (state.streak >= 15) multiplier = 3.0;
+        else if (state.streak >= 10) multiplier = 2.5;
+        else if (state.streak >= 5) multiplier = 1.5;
+
+        const pointsEarned = Math.round(100 * multiplier);
+        state.score += pointsEarned;
+
+        soundSuccess();
+        fb.innerHTML = `<span class="text-emerald-400">✨ Correct! +${pointsEarned} pts. ${q.explanation}</span>`;
+
+        // Confetti for streak milestones
+        if (state.streak % 5 === 0 && window.confetti) {
+          soundMilestone();
+          confetti({
+            particleCount: 50,
+            spread: 60,
+            origin: { y: 0.7 }
+          });
+        }
+
+        setTimeout(() => {
+          generateQuestion();
+        }, 1200);
+
+      } else {
+        // Incorrect
+        state.streak = 0;
+        soundError();
+        fb.innerHTML = `<span class="text-rose-400">❌ Incorrect! Answer is <strong>${q.answer}</strong>. ${q.explanation}</span>`;
+
+        // Log into mistakes review list
+        logMistake(q);
+
+        // Allow user a moment to reflect before next question
+        setTimeout(() => {
+          generateQuestion();
+        }, 2200);
+      }
+
+      updateStatsUI();
+    }
+
+    function showHint() {
+      if (!state.currentQuestion) return;
+      const hintBox = document.getElementById('hint-box');
+      document.getElementById('hint-text').textContent = state.currentQuestion.hint;
+      hintBox.classList.remove('hidden');
+      soundClick();
+    }
+
+    function skipQuestion() {
+      soundClick();
+      generateQuestion();
+    }
+
+    function logMistake(q) {
+      state.mistakes.unshift({
+        id: Date.now(),
+        instruction: q.instruction,
+        mainDisplay: q.mainDisplay,
+        answer: q.answer,
+        explanation: q.explanation
+      });
+      // Cap at 30 items
+      if (state.mistakes.length > 30) state.mistakes.pop();
+      updateMistakesUI();
+    }
+
+    function updateStatsUI() {
+      document.getElementById('stat-score').textContent = state.score.toLocaleString();
+      document.getElementById('stat-streak').textContent = state.streak;
+
+      // Multiplier visual
+      const multEl = document.getElementById('stat-multiplier');
+      if (state.streak >= 5) {
+        let mult = state.streak >= 15 ? '3.0x' : (state.streak >= 10 ? '2.5x' : '1.5x');
+        multEl.textContent = mult;
+        multEl.classList.remove('hidden');
+      } else {
+        multEl.classList.add('hidden');
+      }
+
+      // Accuracy
+      const acc = state.totalCount > 0 
+        ? Math.round((state.correctCount / state.totalCount) * 100) 
+        : 100;
+      document.getElementById('stat-accuracy').textContent = `${acc}%`;
+
+      // Badge for review
+      const badge = document.getElementById('mistake-badge');
+      if (state.mistakes.length > 0) {
+        badge.textContent = state.mistakes.length;
+        badge.classList.remove('hidden');
+      } else {
+        badge.classList.add('hidden');
+      }
+    }
+
+    function resetStats() {
+      state.score = 0;
+      state.streak = 0;
+      state.correctCount = 0;
+      state.totalCount = 0;
+      updateStatsUI();
+      showToast('Session stats reset.');
+    }
+
+    // Speed Blitz Timer System
+    function startBlitzTimer() {
+      if (state.timerInterval) clearInterval(state.timerInterval);
+      state.timerSec = 60;
+      document.getElementById('stat-timer').textContent = `${state.timerSec}s`;
+
+      state.timerInterval = setInterval(() => {
+        if (state.timerSec > 0) {
+          state.timerSec--;
+          document.getElementById('stat-timer').textContent = `${state.timerSec}s`;
+          if (state.timerSec === 10) {
+            playTone(300, 'square', 0.1, 0, 0.1);
+          }
+        } else {
+          clearInterval(state.timerInterval);
+          showToast(`⏱️ Time's up! Final Blitz Score: ${state.score}`);
+          soundMilestone();
+        }
+      }, 1000);
+    }
+
+    function setGameMode(mode) {
+      soundClick();
+      state.gameMode = mode;
+      ['mixed', 'power', 'root', 'identify'].forEach(m => {
+        const btn = document.getElementById(`mode-${m}`);
+        if (m === mode) {
+          btn.className = "px-3 py-1 text-xs font-semibold rounded-lg bg-brand-600 text-white transition-all shadow";
+        } else {
+          btn.className = "px-3 py-1 text-xs font-semibold rounded-lg text-slate-300 hover:text-white transition-all";
+        }
+      });
+      generateQuestion();
+    }
+
+    function setInputMode(mode) {
+      soundClick();
+      state.inputMode = mode;
+      document.getElementById('input-mcq').className = mode === 'mcq' 
+        ? "px-3 py-1 text-xs font-semibold rounded-lg bg-indigo-600 text-white transition-all" 
+        : "px-3 py-1 text-xs font-semibold rounded-lg text-slate-300 hover:text-white transition-all";
+      document.getElementById('input-type').className = mode === 'type' 
+        ? "px-3 py-1 text-xs font-semibold rounded-lg bg-indigo-600 text-white transition-all" 
+        : "px-3 py-1 text-xs font-semibold rounded-lg text-slate-300 hover:text-white transition-all";
+
+      renderQuestion();
+    }
+
+    function setRange(min, max) {
+      soundClick();
+      state.minRange = min;
+      state.maxRange = max;
+      [10, 25, 50].forEach(r => {
+        const btn = document.getElementById(`range-${r}`);
+        if (r === max) {
+          btn.className = "px-2.5 py-1 rounded-lg bg-brand-600 text-white font-medium";
+        } else {
+          btn.className = "px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium";
+        }
+      });
+      generateQuestion();
+    }
+
+    function updateTopics() {
+      state.activeTopics.sq = document.getElementById('topic-sq').checked;
+      state.activeTopics.cb = document.getElementById('topic-cb').checked;
+      state.activeTopics.sqrt = document.getElementById('topic-sqrt').checked;
+      state.activeTopics.cbrt = document.getElementById('topic-cbrt').checked;
+      generateQuestion();
+    }
+
+    // Virtual Numpad helpers
+    function appendNum(digit) {
+      soundClick();
+      const input = document.getElementById('type-input');
+      input.value += digit;
+      input.focus();
+    }
+    function clearNum() {
+      soundClick();
+      const input = document.getElementById('type-input');
+      input.value = '';
+      input.focus();
+    }
+    function deleteNum() {
+      soundClick();
+      const input = document.getElementById('type-input');
+      input.value = input.value.slice(0, -1);
+      input.focus();
+    }
+
+    function populateCheatSheet() {
+      const tbody = document.getElementById('cheat-table-body');
+      tbody.innerHTML = '';
+
+      MATH_DB.forEach(item => {
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-slate-800/60 transition-colors cursor-pointer group";
+        tr.onclick = () => practiceNumber(item.n);
+        tr.innerHTML = `
+          <td class="p-3 text-center font-bold text-white group-hover:text-accent-cyan">${item.n}</td>
+          <td class="p-3 text-center bg-slate-950/40 text-indigo-300 font-bold">${item.square.toLocaleString()}</td>
+          <td class="p-3 text-center text-accent-cyan font-bold">${item.cube.toLocaleString()}</td>
+          <td class="p-3 text-center bg-slate-950/40 text-slate-300 text-xs">${item.sqrt}</td>
+          <td class="p-3 text-center text-slate-300 text-xs">${item.cbrt}</td>
+          <td class="p-3 text-center">
+            <button class="px-2 py-1 rounded-lg bg-slate-800 hover:bg-brand-600 text-xs text-indigo-300 hover:text-white transition">Practice</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function filterTable() {
+      const q = document.getElementById('table-search').value.toLowerCase().trim();
+      const rows = document.querySelectorAll('#cheat-table-body tr');
+      rows.forEach(r => {
+        const text = r.textContent.toLowerCase();
+        r.style.display = text.includes(q) ? '' : 'none';
+      });
+    }
+
+    function practiceNumber(num) {
+      state.minRange = num;
+      state.maxRange = num;
+      switchTab('play');
+      showToast(`🎯 Focusing on powers of ${num}!`);
+      generateQuestion();
+    }
+
+    function updateMistakesUI() {
+      const emptyState = document.getElementById('mistakes-empty');
+      const listContainer = document.getElementById('mistakes-list');
+
+      if (state.mistakes.length === 0) {
+        emptyState.classList.remove('hidden');
+        listContainer.classList.add('hidden');
+      } else {
+        emptyState.classList.add('hidden');
+        listContainer.classList.remove('hidden');
+        listContainer.innerHTML = '';
+
+        state.mistakes.forEach(m => {
+          const card = document.createElement('div');
+          card.className = "p-4 rounded-xl bg-slate-950/70 border border-slate-800 flex flex-col justify-between gap-2";
+          card.innerHTML = `
+            <div class="flex items-center justify-between">
+              <span class="text-xs text-slate-400">${m.instruction}</span>
+              <span class="text-xs px-2 py-0.5 rounded bg-rose-950/60 border border-rose-800 text-rose-300 font-mono">Missed</span>
+            </div>
+            <div class="text-xl font-black text-white font-mono">${m.mainDisplay}</div>
+            <div class="text-xs text-emerald-400 font-semibold border-t border-slate-800 pt-2">Correct Answer: ${m.answer}</div>
+            <div class="text-[11px] text-slate-400">${m.explanation}</div>
+          `;
+          listContainer.appendChild(card);
+        });
+      }
+      updateStatsUI();
+    }
+
+    function clearMistakesLog() {
+      state.mistakes = [];
+      updateMistakesUI();
+      showToast('Mistakes history cleared.');
+    }
+
+    function switchTab(tabId) {
+      soundClick();
+      ['play', 'table', 'mistakes'].forEach(t => {
+        document.getElementById(`tab-${t}`).classList.add('hidden');
+        document.getElementById(`nav-${t}`).className = "px-3.5 py-1.5 rounded-lg text-sm font-medium text-slate-300 hover:text-white transition-all duration-200";
+      });
+
+      document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+      document.getElementById(`nav-${tabId}`).className = "px-3.5 py-1.5 rounded-lg text-sm font-semibold transition-all duration-200 bg-brand-600 text-white shadow-md";
+    }
+
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      document.getElementById('toast-msg').textContent = message;
+      toast.classList.remove('translate-y-20', 'opacity-0');
+      toast.classList.add('translate-y-0', 'opacity-100');
+      setTimeout(() => {
+        toast.classList.remove('translate-y-0', 'opacity-100');
+        toast.classList.add('translate-y-20', 'opacity-0');
+      }, 2500);
+    }
+
+    // Keyboard Shortcuts
+    window.addEventListener('keydown', (e) => {
+      // Don't trigger if user is typing inside search or input
+      if (e.target.tagName === 'INPUT' && e.target.id !== 'type-input') return;
+
+      if (state.inputMode === 'mcq') {
+        if (['1', '2', '3', '4'].includes(e.key)) {
+          const idx = parseInt(e.key) - 1;
+          const btn = document.getElementById(`opt-btn-${idx}`);
+          if (btn && !btn.disabled) handleOptionSelect(idx);
+        }
+      }
+
+      if (e.key === ' ' && e.target.tagName !== 'INPUT') {
+        e.preventDefault();
+        skipQuestion();
+      } else if (e.key.toLowerCase() === 'h' && e.target.tagName !== 'INPUT') {
+        showHint();
+      } else if (e.key.toLowerCase() === 'm' && e.target.tagName !== 'INPUT') {
+        toggleSound();
+      }
+    });
+
+    window.addEventListener('load', () => {
+      populateCheatSheet();
+      generateQuestion();
+      startBlitzTimer();
+    });
+  </script>
+</body>
+</html>
